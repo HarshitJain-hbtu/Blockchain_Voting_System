@@ -33,7 +33,9 @@ let wallet: ethers.Wallet;
 let CONTRACT_ADDRESS = "";
 
 export const initBlockchain = async () => {
-    wallet = new ethers.Wallet(META_PRIVATE_KEY, provider);
+    // Derive the first account from the mnemonic, which Ganache automatically funds with 1000 ETH.
+    const masterNode = ethers.HDNodeWallet.fromMnemonic(MNEOMONIC, "m/44'/60'/0'/0/0");
+    wallet = new ethers.Wallet(masterNode.privateKey, provider);
     
     console.log("Deploying contract to local in-memory blockchain...");
     const factory = new ethers.ContractFactory(ContractAbi.abi, ContractAbi.bytecode.object, wallet);
