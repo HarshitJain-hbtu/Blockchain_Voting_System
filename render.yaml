@@ -19,8 +19,6 @@ services:
         sync: false                # e.g. https://votechain-frontend.vercel.app
       - key: MONOGDB_URL
         sync: false                # MongoDB Atlas connection string
-      - key: RPC_URL
-        value: "http://votechain-contracts:8545" # Internal Render URL for Anvil
       - key: CONTRACT_ADDRESS
         sync: false
       - key: META_PRIVATE_KEY
@@ -31,14 +29,3 @@ services:
         sync: false                # paste the full service-account JSON
       - key: GCS_BUCKET
         sync: false
-
-  # ── Contracts (Foundry Anvil Node, via Docker) ──────────────────────
-  - type: web
-    name: votechain-contracts
-    runtime: docker
-    plan: free
-    dockerfilePath: ./Contracts/Dockerfile
-    dockerContext: ./Contracts
-    envVars:
-      - key: PORT
-        value: "8545"

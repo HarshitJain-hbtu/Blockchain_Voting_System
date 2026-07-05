@@ -1,30 +1,51 @@
 import {ethers} from 'ethers';
 import dotenv from 'dotenv';
 import ContractAbi from '../ABIs/Voting.json' with { type: "json" };
+import ganache from 'ganache';
+
 dotenv.config();
-const RPC_URL = process.env.RPC_URL;
 const META_PRIVATE_KEY = process.env.META_PRIVATE_KEY;
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const MNEOMONICString = process.env.MNEOMONIC;
 
-if(RPC_URL === undefined){
-    throw new Error("RPC_URL is not defined")
-}
 if(META_PRIVATE_KEY === undefined){
     throw new Error("META_PRIVATE_KEY is not defined")
-}
-if(CONTRACT_ADDRESS === undefined){
-    throw new Error("CONTRACT_ADDRESS is not defined");
 }
 if(MNEOMONICString === undefined){
     throw new Error("MNEOMONIC is not defined");
 }
 const MNEOMONIC = ethers.Mnemonic.fromPhrase(MNEOMONICString);
 
-const provider = new ethers.JsonRpcProvider(RPC_URL);
-const wallet = new ethers.Wallet(META_PRIVATE_KEY,provider);
+const options = {
+  wallet: {
+    mnemonic: MNEOMONICString,
+    totalAccounts: 1000,
+    defaultBalance: 1000,
+  },
+  logging: {
+    quiet: true
+  }
+};
+const ganacheProvider = ganache.provider(options);
+const provider = new ethers.BrowserProvider(ganacheProvider as any);
 
-const contract = new ethers.Contract(CONTRACT_ADDRESS,ContractAbi.abi,wallet);
+let contract: ethers.Contract;
+let wallet: ethers.Wallet;
+let CONTRACT_ADDRESS = "";
+
+export const initBlockchain = async () => {
+    wallet = new ethers.Wallet(META_PRIVATE_KEY, provider);
+    
+    console.log("Deploying contract to local in-memory blockchain...");
+    const factory = new ethers.ContractFactory(ContractAbi.abi, ContractAbi.bytecode.object, wallet);
+    
+    const deployTx = await factory.deploy();
+    await deployTx.waitForDeployment();
+    
+    CONTRACT_ADDRESS = await deployTx.getAddress();
+    console.log("Contract deployed successfully at address:", CONTRACT_ADDRESS);
+    
+    contract = new ethers.Contract(CONTRACT_ADDRESS, ContractAbi.abi, wallet);
+};
 
 export const startElection = async (duration : number) => {
     const txn = await contract.startElection(duration);

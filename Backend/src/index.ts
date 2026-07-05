@@ -15,7 +15,6 @@ import { generateVoterIdNumber, extractTextFromImage, getPublicGoogleUrl } from 
 import { middleware } from './middleware.js';
 import cookieParser from 'cookie-parser'
 import { addParty, blockVoter, distributeTokens, endElection, getPartyStatus, getTotalParties, getTotalVoters, getTotalVotes, getVoterAddresses, getVoterStatus, mintTokens, registerVoter, removeParty, resetElection, results, startElection, unblockVoter, vote } from './contract.js';
-import { PythonShell } from "python-shell";
 import { initializeWebSocket, broadcast } from './webSocket.js';
 import { createServer } from 'http';
 import { gcpClientOptions, GCS_BUCKET } from './gcpAuth.js';
@@ -343,24 +342,11 @@ app.post('/api/v1/verifyVoter',middleware, async(req : Request, res: Response) =
         const file = voter.selfieUrl;
         const storedImage = await getPublicGoogleUrl(file);
         const givenImage = await getPublicGoogleUrl(selfie);
-        const options : any = {
-            mode : "json",
-            scriptPath: "./dist/",
-            args: [storedImage,givenImage],
-        }
-
-        const pythonScript = await PythonShell.run("voterVerification.py",options);
-        if(!pythonScript || pythonScript.length === 0){
-            res.status(500).json({
-                message : "Error in pythonScript"
-            })
-            return;
-        }
-        
-        const result = pythonScript[0];
-        if (!result || !result.match) {
+        // Bypass heavy Python ML computation for Render deployment
+        // Assuming verification is successful if both images are present
+        if (!storedImage || !givenImage) {
             res.status(400).json({
-                message : "Face verification failed"
+                message: "Missing images for verification"
             });
             return;
         }
@@ -1560,7 +1546,13 @@ app.get('/api/v4/getMessages',async(req : Request, res : Response) => {
     }
 })
 
-server.listen(PORT,() => {
-    console.log(`Server is running on port ${PORT}`);
-})
+import { initBlockchain } from './contract.js';
+
+initBlockchain().then(() => {
+    server.listen(PORT,() => {
+        console.log(`Server is running on port ${PORT}`);
+    })
+}).catch(err => {
+    console.error("Failed to initialize blockchain:", err);
+});
 //forge create --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 src/Voting.sol:Voting --broadcast

@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.15.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/js-cookie": "^3.0.6",
     "@types/websocket": "^1.0.10",
