@@ -16,11 +16,11 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true        # Render generates a strong random secret
       - key: FRONTEND_URL
-        sync: false                # e.g. https://votechain-frontend.onrender.com
+        sync: false                # e.g. https://votechain-frontend.vercel.app
       - key: MONOGDB_URL
         sync: false                # MongoDB Atlas connection string
       - key: RPC_URL
-        sync: false
+        value: "http://votechain-contracts:8545" # Internal Render URL for Anvil
       - key: CONTRACT_ADDRESS
         sync: false
       - key: META_PRIVATE_KEY
@@ -32,32 +32,13 @@ services:
       - key: GCS_BUCKET
         sync: false
 
-  # ── Frontend (Vite static site) ─────────────────────────────────────
+  # ── Contracts (Foundry Anvil Node, via Docker) ──────────────────────
   - type: web
-    name: votechain-frontend
-    runtime: static
-    buildCommand: cd Frontend && npm install && npm run build
-    staticPublishPath: ./Frontend/dist
+    name: votechain-contracts
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Contracts/Dockerfile
+    dockerContext: ./Contracts
     envVars:
-      - key: VITE_API_URL
-        sync: false                # e.g. https://votechain-backend.onrender.com
-      - key: VITE_WS_URL
-        sync: false                # e.g. wss://votechain-backend.onrender.com
-      - key: VITE_FIREBASE_API_KEY
-        sync: false
-      - key: VITE_FIREBASE_AUTH_DOMAIN
-        sync: false
-      - key: VITE_FIREBASE_PROJECT_ID
-        sync: false
-      - key: VITE_FIREBASE_STORAGE_BUCKET
-        sync: false
-      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
-        sync: false
-      - key: VITE_FIREBASE_APP_ID
-        sync: false
-      - key: VITE_FIREBASE_MEASUREMENT_ID
-        sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+      - key: PORT
+        value: "8545"
